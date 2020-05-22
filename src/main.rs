@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::fs::OpenOptions;
 use std::io::*;
 
 const PERSONDAT: &str = "person.dat";
@@ -14,6 +16,9 @@ impl Person {
         Self { name, age }
     }
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct Persons(Vec<Person>);
 
 fn main() {
     run();
@@ -62,9 +67,51 @@ fn add_person() {
 
     let p = Person::new(name.trim().to_string(), age.trim().parse::<i32>().unwrap());
 
-    println!("{:?}", p);
+    match write_person_to_file(p) {
+        Ok(_) => println!("Person saved to disk"),
+        _ => println!("Could not write file"),
+    }
+}
+
+fn write_person_to_file(person: Person) -> Result<()> {
+    // open/ create file
+    let mut file = match OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(PERSONDAT)
+    {
+        Ok(file) => file,
+        Err(e) => panic!("Problme opening the file: {:?}", e),
+    };
+
+    let persons_bytes = get_persons_bytes_from_file();
+    let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
+    persons.0.push(person);
+
+    // encode person struct to binary
+    let bp: Vec<u8> = bincode::serialize(&persons).unwrap();
+
+    // write binary vector to the file
+    file.write_all(&bp)?;
+    Ok(())
 }
 
 fn display_persons() {
-    println!("display persons here");
+    let bytes: Vec<u8> = get_persons_bytes_from_file();
+    let persons: Vec<Person> = bincode::deserialize(&bytes[..]).unwrap();
+    println!("{:?}", persons);
+}
+
+fn get_persons_bytes_from_file() -> Vec<u8> {
+    let bytes: Vec<u8> = match std::fs::read(PERSONDAT) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                panic!("invalid permissions. {:?}", e);
+            }
+            panic!("{:?}", e);
+        }
+    };
+    bytes
 }

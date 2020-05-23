@@ -129,7 +129,7 @@ fn get_persons_bytes_from_file() -> Vec<u8> {
 fn create_and_open_file(path: &str) -> std::fs::File {
     let file = match OpenOptions::new().write(true).create(true).open(path) {
         Ok(file) => file,
-        Err(e) => panic!("Problme opening the file: {:?}", e),
+        Err(e) => panic!("Problem opening the file: {:?}", e),
     };
 
     file

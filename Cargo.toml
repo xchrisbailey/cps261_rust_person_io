@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0.110", features = ["derive"] }
 bincode = "1.2.1"
+colored = "1.9.3"

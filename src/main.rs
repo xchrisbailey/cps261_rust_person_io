@@ -1,3 +1,4 @@
+use colored::*;
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::*;
@@ -42,16 +43,42 @@ impl Person {
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Persons(Vec<Person>);
 
+impl Persons {
+    fn add(&mut self, person: Person) {
+        &self.0.push(person);
+    }
+
+    fn encode(&self) -> Vec<u8> {
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        encoded
+    }
+}
+
 fn main() {
     let mut input: String = String::new();
     loop {
         input.clear();
 
-        println!("~~~~~~~~~~~~~~~~");
-        println!("1: add person");
-        println!("2: display persons");
-        println!("0: quit");
-        println!("~~~~~~~~~~~~~~~~");
+        println!("{}", "~~~~~~~~~~~~~~~~~~~~".color("blue").reversed());
+        println!(
+            "{} {}\x20\x20\x20\x20\x20 {}",
+            "1:".color("blue").reversed(),
+            "add person".color("blue"),
+            "\x20".color("blue").reversed()
+        );
+        println!(
+            "{} {} {}",
+            "2:".color("blue").reversed(),
+            "display persons".color("blue"),
+            "\x20".color("blue").reversed()
+        );
+        println!(
+            "{} {}\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20{}",
+            "0:".color("blue").reversed(),
+            "quit".color("blue"),
+            "\x20".color("blue").reversed()
+        );
+        println!("{}", "~~~~~~~~~~~~~~~~~~~~".color("blue").reversed());
 
         stdout().flush().expect("Unable to clear stdout");
         stdin()
@@ -69,37 +96,25 @@ fn main() {
 
 fn add_person() {
     let p: Person = Person::create();
-    if Path::new(PERSONDAT).exists() {
-        match append_person_to_file(p) {
-            Ok(_) => println!("Person saved to disk"),
-            _ => println!("Could not write file"),
-        }
-    } else {
-        match write_person_to_file(p) {
-            Ok(_) => println!("Person saved to disk"),
-            _ => println!("Could not write file"),
-        }
-    }
+    match write_person_to_file(p) {
+        Ok(_) => println!("Person added"),
+        _ => println!("Could not add person"),
+    };
 }
 
 fn write_person_to_file(person: Person) -> Result<()> {
     let mut file = create_and_open_file(PERSONDAT);
-    let persons: Persons = Persons(vec![person]);
-    let encoded_persons: Vec<u8> = bincode::serialize(&persons).unwrap(); // encode person struct to vec binary
-    file.write_all(&encoded_persons)?; // write encoded Persons struct to file
-    Ok(())
-}
+    let encoded_persons: Vec<u8>;
+    if Path::new(PERSONDAT).exists() {
+        let persons_bytes = get_persons_bytes_from_file();
+        let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
+        persons.add(person);
+        encoded_persons = persons.encode();
+    } else {
+        let persons: Persons = Persons(vec![person]);
+        encoded_persons = persons.encode();
+    }
 
-fn append_person_to_file(person: Person) -> Result<()> {
-    let mut file = create_and_open_file(PERSONDAT);
-
-    // decode file and add new person
-    let persons_bytes = get_persons_bytes_from_file();
-    let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
-    persons.0.push(person);
-
-    // reencode and write to file
-    let encoded_persons: Vec<u8> = bincode::serialize(&persons).unwrap();
     file.write_all(&encoded_persons)?;
     Ok(())
 }
@@ -109,8 +124,21 @@ fn display_persons() {
     let persons: Vec<Person> = bincode::deserialize(&bytes[..]).unwrap();
 
     for person in persons {
-        println!("{:?}", person);
+        print_person(person);
     }
+}
+
+fn print_person(person: Person) {
+    println!(
+        "\n{}: {}",
+        "name".color("blue").reversed(),
+        person.name.color("blue")
+    );
+    println!(
+        "{}: {}\n",
+        "age".color("blue").reversed(),
+        person.age.to_string().color("blue")
+    );
 }
 
 fn get_persons_bytes_from_file() -> Vec<u8> {

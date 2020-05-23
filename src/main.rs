@@ -107,6 +107,7 @@ fn write_person_to_file(person: Person) -> Result<()> {
     let encoded_persons: Vec<u8>;
     if Path::new(PERSONDAT).exists() {
         let persons_bytes = get_persons_bytes_from_file();
+        println!("we shouldnt be here {:?}", persons_bytes);
         let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
         persons.add(person);
         encoded_persons = persons.encode();

@@ -15,6 +15,28 @@ impl Person {
     pub fn new(name: String, age: i32) -> Self {
         Self { name, age }
     }
+
+    pub fn create() -> Self {
+        let mut name = String::new();
+        let mut age = String::new();
+
+        print!("Enter persons name: ");
+        stdout().flush().expect("Unable to clear stdout");
+        stdin()
+            .read_line(&mut name)
+            .expect("Did not enter valid name");
+
+        print!("Enter persons age: ");
+        stdout().flush().expect("Unable to clear stdout");
+        stdin()
+            .read_line(&mut age)
+            .expect("Did not enter valid age");
+
+        Self {
+            name: name.trim().to_string(),
+            age: age.trim().parse::<i32>().unwrap(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -46,7 +68,7 @@ fn main() {
 }
 
 fn add_person() {
-    let p: Person = create_person();
+    let p: Person = Person::create();
     if Path::new(PERSONDAT).exists() {
         match append_person_to_file(p) {
             Ok(_) => println!("Person saved to disk"),
@@ -61,66 +83,34 @@ fn add_person() {
 }
 
 fn write_person_to_file(person: Person) -> Result<()> {
-    // open/ create file
-    let mut file = match OpenOptions::new().write(true).create(true).open(PERSONDAT) {
-        Ok(file) => file,
-        Err(e) => panic!("Problme opening the file: {:?}", e),
-    };
-
+    let mut file = create_and_open_file(PERSONDAT);
     let persons: Persons = Persons(vec![person]);
-
-    // encode person struct to binary
-    let bp: Vec<u8> = bincode::serialize(&persons).unwrap();
-
-    // write binary vector to the file
-    file.write_all(&bp)?;
+    let encoded_persons: Vec<u8> = bincode::serialize(&persons).unwrap(); // encode person struct to vec binary
+    file.write_all(&encoded_persons)?; // write encoded Persons struct to file
     Ok(())
 }
 
 fn append_person_to_file(person: Person) -> Result<()> {
-    // open/ create file
-    let mut file = match OpenOptions::new().write(true).create(true).open(PERSONDAT) {
-        Ok(file) => file,
-        Err(e) => panic!("Problme opening the file: {:?}", e),
-    };
+    let mut file = create_and_open_file(PERSONDAT);
 
+    // decode file and add new person
     let persons_bytes = get_persons_bytes_from_file();
     let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
-    println!("{:?}", persons);
     persons.0.push(person);
-    println!("{:?}", persons);
-    // encode person struct to binary
-    let bp: Vec<u8> = bincode::serialize(&persons).unwrap();
 
-    // write binary vector to the file
-    file.write_all(&bp)?;
+    // reencode and write to file
+    let encoded_persons: Vec<u8> = bincode::serialize(&persons).unwrap();
+    file.write_all(&encoded_persons)?;
     Ok(())
-}
-
-fn create_person() -> Person {
-    let mut name = String::new();
-    let mut age = String::new();
-
-    print!("Enter persons name: ");
-    stdout().flush().expect("Unable to clear stdout");
-    stdin()
-        .read_line(&mut name)
-        .expect("Did not enter valid name");
-
-    print!("Enter persons age: ");
-    stdout().flush().expect("Unable to clear stdout");
-    stdin()
-        .read_line(&mut age)
-        .expect("Did not enter valid age");
-
-    let p = Person::new(name.trim().to_string(), age.trim().parse::<i32>().unwrap());
-    p
 }
 
 fn display_persons() {
     let bytes: Vec<u8> = get_persons_bytes_from_file();
     let persons: Vec<Person> = bincode::deserialize(&bytes[..]).unwrap();
-    println!("{:?}", persons);
+
+    for person in persons {
+        println!("{:?}", person);
+    }
 }
 
 fn get_persons_bytes_from_file() -> Vec<u8> {
@@ -134,4 +124,13 @@ fn get_persons_bytes_from_file() -> Vec<u8> {
         }
     };
     bytes
+}
+
+fn create_and_open_file(path: &str) -> std::fs::File {
+    let file = match OpenOptions::new().write(true).create(true).open(path) {
+        Ok(file) => file,
+        Err(e) => panic!("Problme opening the file: {:?}", e),
+    };
+
+    file
 }

@@ -59,26 +59,26 @@ fn main() {
     loop {
         input.clear();
 
-        println!("{}", "~~~~~~~~~~~~~~~~~~~~".color("blue").reversed());
+        println!("{}", "~~~~~~~~~~~~~~~~~~~~".blue().reversed());
         println!(
             "{} {}\x20\x20\x20\x20\x20 {}",
-            "1:".color("blue").reversed(),
-            "add person".color("blue"),
-            "\x20".color("blue").reversed()
+            "1:".blue().reversed(),
+            "add person".blue(),
+            "\x20".blue().reversed()
         );
         println!(
             "{} {} {}",
-            "2:".color("blue").reversed(),
-            "display persons".color("blue"),
-            "\x20".color("blue").reversed()
+            "2:".blue().reversed(),
+            "display persons".blue(),
+            "\x20".blue().reversed()
         );
         println!(
             "{} {}\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20{}",
-            "0:".color("blue").reversed(),
-            "quit".color("blue"),
-            "\x20".color("blue").reversed()
+            "0:".blue().reversed(),
+            "quit".blue(),
+            "\x20".blue().reversed()
         );
-        println!("{}", "~~~~~~~~~~~~~~~~~~~~".color("blue").reversed());
+        println!("{}", "~~~~~~~~~~~~~~~~~~~~".blue().reversed());
 
         stdout().flush().expect("Unable to clear stdout");
         stdin()
@@ -128,15 +128,11 @@ fn display_persons() {
 }
 
 fn print_person(person: Person) {
-    println!(
-        "\n{}: {}",
-        "name".color("blue").reversed(),
-        person.name.color("blue")
-    );
+    println!("\n{}: {}", "name".blue().reversed(), person.name.blue());
     println!(
         "{}: {}\n",
-        "age".color("blue").reversed(),
-        person.age.to_string().color("blue")
+        "age".blue().reversed(),
+        person.age.to_string().blue()
     );
 }
 

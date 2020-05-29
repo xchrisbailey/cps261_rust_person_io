@@ -44,10 +44,6 @@ impl Person {
 struct Persons(Vec<Person>);
 
 impl Persons {
-    fn add(&mut self, person: Person) {
-        &self.0.push(person);
-    }
-
     fn encode(&self) -> Vec<u8> {
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
         encoded
@@ -104,14 +100,17 @@ fn add_person() {
 
 fn write_person_to_file(person: Person) -> Result<()> {
     let encoded_persons: Vec<u8>;
-    if Path::new(PERSONDAT).exists() {
-        let persons_bytes = get_persons_bytes_from_file();
-        let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
-        persons.add(person);
-        encoded_persons = persons.encode();
-    } else {
-        let persons: Persons = Persons(vec![person]);
-        encoded_persons = persons.encode();
+    match Path::new(PERSONDAT).exists() {
+        true => {
+            let persons_bytes = get_persons_bytes_from_file();
+            let mut persons: Persons = bincode::deserialize(&persons_bytes[..]).unwrap();
+            persons.0.push(person);
+            encoded_persons = persons.encode();
+        }
+        false => {
+            let persons: Persons = Persons(vec![person]);
+            encoded_persons = persons.encode();
+        }
     }
 
     create_and_open_file(PERSONDAT).write_all(&encoded_persons)?;
@@ -150,10 +149,8 @@ fn get_persons_bytes_from_file() -> Vec<u8> {
 }
 
 fn create_and_open_file(path: &str) -> std::fs::File {
-    let file = match OpenOptions::new().write(true).create(true).open(path) {
+    match OpenOptions::new().write(true).create(true).open(path) {
         Ok(file) => file,
         Err(e) => panic!("Problem opening the file: {:?}", e),
-    };
-
-    file
+    }
 }
